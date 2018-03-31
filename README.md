@@ -2,9 +2,7 @@ Neural network on wine dataset from scikit learn.
 Tensorflow implementation (95% of precision)
 
 TODO:
-- confusion matrix
-- ROC
-- handmade implementation
+- backprop
 
 Commands:
 - to run wine.ipynb: jupyter notebook
