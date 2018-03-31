@@ -1,0 +1,206 @@
+% !TeX spellcheck = fr_FR
+\documentclass[a4paper,11pt,oneside,roman]{article}
+    \usepackage[utf8]{inputenc}
+    \usepackage[T1]{fontenc}
+    \usepackage[top=2cm, left=2cm, right=2cm, bottom=2cm]{geometry}
+    \usepackage[francais]{babel}
+    \usepackage[hidelinks=true]{hyperref}
+    \usepackage{listings}
+    \usepackage{color}
+    \usepackage{amsmath}
+    \usepackage{graphicx}
+    \usepackage{amssymb}
+    \usepackage{natbib}
+    \usepackage{float}
+    \usepackage{hyperref}
+    \usepackage{advdate}
+    
+    \floatplacement{figure}{H}
+    
+    \definecolor{dkgreen}{rgb}{0,0.6,0}
+    \definecolor{gray}{rgb}{0.5,0.5,0.5}
+    \definecolor{mauve}{rgb}{0.58,0,0.82}
+    
+    \linespread{1.3} %space between lines
+    \setlength{\parskip}{1em}  %space between paragraphs
+    
+    \begin{document}
+    
+    \begin{titlepage}
+    
+        \newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+        
+        \center % Center everything on the page
+         
+        %----------------------------------------------------------------------------------------
+        %	HEADING SECTIONS
+        %----------------------------------------------------------------------------------------
+        
+        \textsc{\LARGE Université de Technologie de Compiègne}\\[0.5cm] % Name of your university/college
+        \textsc{\Large Génie informatique}\\[1.5cm] % Name of your university/college
+        
+        %----------------------------------------------------------------------------------------
+        %	TITLE SECTION
+        %----------------------------------------------------------------------------------------
+        
+        \HRule \\[0.4cm]
+        { \huge \bfseries Rétropropagation}\\[0.4cm] % Title of your document
+        \HRule \\[1.5cm]
+         
+        %----------------------------------------------------------------------------------------
+        %	AUTHOR SECTION
+        %----------------------------------------------------------------------------------------
+        
+        % If you don't want a supervisor, uncomment the two lines below and remove the section above
+        \Large \emph{Authors:}\\
+        Nacim \textsc{Khalis} et Antoine \textsc{Collas}\\[3cm] % Your name
+        
+        %----------------------------------------------------------------------------------------
+        %	DATE SECTION
+        %----------------------------------------------------------------------------------------
+        
+        {\large \AdvanceDate[-4]\today}\\[4cm] % Date, change the \today to a set date if you want to be precise
+        
+        %----------------------------------------------------------------------------------------
+        %	LOGO SECTION
+        %----------------------------------------------------------------------------------------
+        
+        \includegraphics[width=0.5\textwidth]{imgs/logo_UTC_SU.jpg}\\[1cm] % Include a department/university logo - this will require the graphicx package
+        
+        %----------------------------------------------------------------------------------------
+        
+        \vfill % Fill the rest of the page with whitespace
+        
+    \end{titlepage}
+    
+    % \tableofcontents
+    
+    \pagebreak
+        
+    \section{Réseau de neurones: perceptron multicouche}
+    
+    L'objectif est de programmer un perceptron multicouche afin de classer un ensemble de bouteilles de vins en 3 ensembles.
+
+    L'architecture de notre perceptron multicouche est la suivante:
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5\textwidth]{imgs/perceptron.png}
+        \caption{Perceptron multi-couches tiré de 'Hands-On Machine Learning with Scikit-Learn and TensorFlow' de Aurélien Géron.}
+        \label{fig_perceptron}
+    \end{figure}
+
+    \section{Rétropropagation appliquée à un réseau de classification}
+    \subsection{Notation}
+    $m$ est le nombre d'éléments dans notre ensemble d'entrainement.
+
+    $K$ est le nombre de classes (et donc de sorties de notre réseau de neurones).
+
+    $n_{in}$ est le nombre de neurones de la couche d'entrée (sans le biais). Donc $n_{in}$ correspond à la dimension de nos données d'entrée.
+    
+    $n_{hidden}$ est le nombre de neurones de la couche cachée (sans le biais).
+    
+    $n_{out}$ est le nombre de neurones de la couche de sortie. Donc $n_{out}$ correspond au nombre de classes de notre problème.
+    
+    $b_i^{(l)}$ est le biais de la couche $l$ allant vers le ième neurone de la couche $l+1$.
+
+    $w_{ij}^{(l)}$ est le poids entre le neurone $i$ de la couche $l$ et le neurone $j$ de la couche $l+1$.
+    
+    $x_{i}^{(l)}$ est la sortie du neurone $i$ de la couche $l$. Donc $x_{i}^{(2)} = relu(\sum\limits_{k=1}^{n_{in}} w_{ki}^{(1)}x_{k}^{(1)} + b_i^{(1)})$
+    
+    $relu(x) = max(0,x)$ est la fonction d'activation de la couche cachée.
+
+    $softmax(x)_j = \frac{e^{x_j}}{\sum\limits_{k=1}^n e^{x_k}}$ est la fonction de sortie permettant d'obtenir la probabilité pour chaque classe.
+
+    $E = -\frac{1}{m} \sum\limits_{i=1}^m\sum\limits_{k=1}^K (y_{k}^{(i)} \times log(\hat{p}_{k}^{(i)}))$ est l'erreur appelée entropie croisée.
+    $y_{k}^{(i)}$ vaut 1 si le ième élément de l'échantillon appartient à la classe $k$, 0 sinon. $\hat{p}_{k}^{(i)}$ est la kème sortie du perceptron pour le ième élément de l'échantillon.
+
+    \subsection{Rétropropagation}
+
+    L'apprentissage d'un réseau de neurones est executé à l'aide d'une descente de gradient sur la fonction de coût. Les paramètres de notre réseau sont les poids $w_{ij}^{(l)}$ et les biais $b_j^{(l)}$.
+    Nous cherchons donc à calculer les dérivées partielles de la fonction de coût par rapport à ces différents paramètres. Nous commençons par montrer comment calculer $\frac{\partial E}{\partial w_{ij}^{(2)}}$ $\forall (i,j) \in \{1, ..., n_{hidden}\} \times \{1, ..., n_{out}\}.$
+
+    Pour un lot de données entré dans le réseau nous avons les équations suivantes en partant de l'erreur:
+    
+    \begin{equation}
+        E = -\frac{1}{m} \sum\limits_{p=1}^m\sum\limits_{k=1}^K (y_{k}^{(p)} \times log(\hat{p}_{k}^{(p)}))
+    \end{equation}
+avec 
+    \begin{equation}
+        \hat{p}_{k}^{(p)} = softmax(x^{(p,3)})_k
+    \end{equation}
+    où $x^{(p,3)}$ est la sortie de la dernière couche avant le softmax pour la pème donnée d'entrainement.
+ 
+    \begin{equation}
+        log(\hat{p}_{k}^{(p)}) = \frac{ln(\hat{p}_{k}^{(p)})}{ln(10)} = \frac{(x^{(p,3)})_k - ln(\sum\limits_{q=1}^{n_{out}} e^{(x^{(p,3)})_q})} {ln(10)}
+    \end{equation}
+
+    Règle de la chaine:
+    si $y = f(u)$ et $u=g(x)=(g_1(x), ..., g_m(x))$ alors $\frac{\partial y}{\partial x_i} = \sum\limits_{l=1}^{m} \frac{\partial y}{\partial u_l} \frac{\partial u_l}{\partial x_i}$
+    
+    Donc en appliquant la règle de la chaine:
+    \begin{equation}
+        \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{n_{out}} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}}
+    \end{equation}
+    
+    \begin{equation}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}} = \sum\limits_{q=1}^{n_{out}} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{q}} \frac{\partial (x^{(p,3)})_{q}}{\partial w_{ij}^{(2)}}
+    \end{equation}
+    
+    or si $q \ne j$
+    \begin{equation}
+       \frac{\partial (x^{(p,3)})_{q}}{\partial w_{ij}^{(2)}} = 0
+    \end{equation}
+    
+    donc
+    \begin{equation}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}} = \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} \frac{\partial (x^{(p,3)})_{j}}{\partial w_{ij}^{(2)}}
+    \end{equation}
+
+    Si $k \ne j$
+    \begin{equation}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = -\frac{1}{ln(10)} \frac{e^{(x^{(p,3)})_j}}{\sum\limits_{q=1}^{n_{out}} e^{(x^{(p,3)})_q}} = -\frac{softmax(x^{(p,3)})_j}{ln(10)}
+    \end{equation}
+
+    Sinon (dans le cas où $k = j$):
+    \begin{equation}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = \frac{1}{ln(10)} \bigg[ 1 - softmax(x^{(p,3)})_j \bigg]
+    \end{equation}
+
+    Donc $\forall k$:
+    \begin{equation}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = \frac{1}{ln(10)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg]
+    \end{equation}
+    
+    où $ \delta_{kj} = 1$ si $k = j$, $0$ sinon.
+    
+    De plus,
+    \begin{equation}
+        (x^{(p,3)})_{j} = \sum\limits_{i=1}^{n_{hidden}} w_{ij}^{(2)}(x^{(p,2)})_i + b_j^{(2)}
+    \end{equation}
+
+    Donc,
+    \begin{equation}
+        \frac{\partial (x^{(p,3)})_{q}}{\partial w^{(2)}_{ij}} = (x^{(p,2)})_i
+    \end{equation}
+
+    \begin{equation}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w^{(2)}_{ij}} = \frac{1}{ln(10)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] (x^{(p,2)})_{i}
+    \end{equation}
+
+    Ce qui donne finalement:
+    \begin{equation}
+        \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m \times ln(10)} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{n_{out}} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] (x^{(p,2)})_{i}
+    \end{equation}
+
+    Cette formule peut être interprétée de la manière suivante:
+    \begin{itemize}
+        \item Si la classe à prédire pour la $p^{eme}$ donnée entrée dans le réseau est $j$ alors le poids $w_{ij}^{(2)}$ est augmenté en fonction de la performance de la prédiction et de $(x^{(p,2)})_{i}$.
+        Si la prédiction est déjà très bonne, $w_{ij}^{(2)}$ n'est est que légèrement augmenté sinon il est formetement augmenté pour augmenter la probabilité sortante du réseau.
+        \item Si la classe à prédire est $k \ne j$ alors il y une diminution du poids en fonction de la probabilité sortante et de $(x^{(p,2)})_{i}$. Si la probabilité sortante est faible, le poids n'est que légèrement diminué. Si elle est élevée (alors qu'elle devrait être faible), le poids est fortement diminué.
+    \end{itemize}
+    % \begin{equation}
+    %     x^{(3)} = (x^{(3)}_1, ..., x^{(3)}_{n_{out}}) = (\sum\limits_{k=1}^{n_{hidden}} w_{k1}^{(2)}x_{k}^{(2)} + b_1^{(2)}, ..., \sum\limits_{k=1}^{n_{hidden}} w_{kn_{out}}^{(2)}x_{k}^{(2)} + b_{n_{out}}^{(2)})
+    % \end{equation}
+
+
+    \end{document}
