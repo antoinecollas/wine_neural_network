@@ -214,7 +214,7 @@ avec
     \end{equation}
 
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \sum\limits_{k=1}^{n_{out}} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_k} \frac{\partial (x^{(p,3)})_k}{\partial (x^{(p,2)})_j}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \sum\limits_{q=1}^{n_{out}} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_q} \frac{\partial (x^{(p,3)})_q}{\partial (x^{(p,2)})_j}
         \label{log_x2}
     \end{equation}
     
@@ -225,7 +225,7 @@ avec
     
     D'après les équations \eqref{log_x3}, \eqref{log_x2}, \eqref{x3_x2}:
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \frac{1}{ln(10)} \sum\limits_{k=1}^{n_{out}} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] w_{jk}^{(2)}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \frac{1}{ln(10)} \sum\limits_{q=1}^{n_{out}} \bigg[ \delta_{kq} - softmax(x^{(p,3)})_q \bigg] w_{jk}^{(2)}
         \label{log_x2_final}
     \end{equation}
     
@@ -253,13 +253,13 @@ avec
     %16,19,23
     D'après les équations \eqref{log_wij}, \eqref{log_x2_final}, \eqref{x2_wij}:
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}} = \frac{1}{ln(10)} \sum\limits_{k=1}^{n_{out}} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] w_{jk}^{(2)} H\bigg[\sum\limits_{k=1}^{n_{in}} w_{kj}^{(1)}(x^{(p,1)})_{k} + b_j^{(1)}\bigg](x^{(p,1)})_i
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}} = \frac{1}{ln(10)} \sum\limits_{q=1}^{n_{out}} \bigg[\big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] H\bigg[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\bigg](x^{(p,1)})_i
         \label{log_wij_final}
     \end{equation}
 
     D'après les équations \eqref{E_wij1} et \eqref{log_wij_final}:
     \begin{equation}
-        \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)}  \sum\limits_{k=1}^{n_{out}} \sum\limits_{p=1}^{m} \Bigg[ y_k^{(p)} \sum\limits_{k=1}^{n_{out}} \bigg[ \big[ \delta_{kj} - softmax(x^{(p,3)})_j \big] w_{jk}^{(2)} \bigg] H\big[\sum\limits_{k=1}^{n_{in}} w_{kj}^{(1)}(x^{(p,1)})_{k} + b_j^{(1)}\big](x^{(p,1)})_i \Bigg]
+        \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)}  \sum\limits_{k=1}^{n_{out}} \sum\limits_{p=1}^{m} \Bigg[ y_k^{(p)} \sum\limits_{q=1}^{n_{out}} \bigg[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i \Bigg]
     \end{equation}
 
     Interprétation:
@@ -268,7 +268,7 @@ avec
         \item nous réunissons tous les éléments d'entrainement par classe (interprétation de la double somme et de $y_k^{(p)}$)
         \item pour chaque élément de la classe nous calculons la responsabilité de $w_{ij}^{(1)}$ dans l'erreur finale: si pour l'élément choisi, la somme pondérée est négative alors le poids n'est pas modifié (pas de responsabilité dans l'erreur, représenté par H dans l'équation)
         \item sinon la modification est proportionnelle à $(x^{(p,1)})_i$ (la variable d'entrée pour le $p^{eme}$ élément d'entrainement) 
-        \item la modification est aussi proportionnelle aux erreurs de toutes les sorties (les couches sont totalement connectées ce qui est visible dans $\sum\limits_{k=1}^{n_{out}} \bigg[ \big[ \delta_{kj} - softmax(x^{(p,3)})_j \big] w_{jk}^{(2)} \bigg]$)
+        \item la modification est aussi proportionnelle aux erreurs de toutes les sorties (les couches sont totalement connectées ce qui est visible dans $\sum\limits_{q=1}^{n_{out}} \bigg[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg]$)
     \end{itemize}
     % \begin{equation}
     %     x^{(3)} = (x^{(3)}_1, ..., x^{(3)}_{n_{out}}) = (\sum\limits_{k=1}^{n_{hidden}} w_{k1}^{(2)}x_{k}^{(2)} + b_1^{(2)}, ..., \sum\limits_{k=1}^{n_{hidden}} w_{kn_{out}}^{(2)}x_{k}^{(2)} + b_{n_{out}}^{(2)})
