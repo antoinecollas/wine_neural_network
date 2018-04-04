@@ -337,11 +337,27 @@ avec
     \end{equation}
 
     \begin{equation}
+        \frac{\partial E^p}{\partial b_j^{(2)}} = \frac{\partial E^p}{\partial (x^{(p,3)})_{j}} \frac{\partial (x^{(p,3)})_{j}}{\partial b_{j}^{(2)}} = \frac{\partial E^p}{\partial (x^{(p,3)})_{j}}
+    \end{equation}
+
+    \begin{equation}
+        \frac{\partial E}{\partial b_{j}^{(2)}} = \frac{1}{m} \sum\limits_{p=1}^{m} \frac{\partial E^p}{\partial b_{j}^{(2)}}
+    \end{equation}
+
+    \begin{equation}
         \frac{\partial E^p}{\partial w_{ij}^{(1)}} = \sum\limits_{k=1}^{K} \Big(\frac{\partial E^p}{\partial (x^{(p,3)})_k} w_{jk}^{(2)}\Big) H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big] (x^{(p,1)})_i
     \end{equation}
 
     \begin{equation}
         \frac{\partial E}{\partial w_{ij}^{(1)}} = \frac{1}{m}\sum\limits_{p=1}^{m}\frac{\partial E^p}{\partial w_{ij}^{(1)}}
+    \end{equation}
+
+    \begin{equation}
+        \frac{\partial E^p}{\partial b_j^{(1)}} = \sum\limits_{k=1}^{K} \Big(\frac{\partial E^p}{\partial (x^{(p,3)})_k} w_{jk}^{(2)}\Big) H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big]
+    \end{equation}
+
+    \begin{equation}
+        \frac{\partial E}{\partial b_j^{(1)}} = \frac{1}{m}\sum\limits_{p=1}^{m}\frac{\partial E^p}{\partial b_j^{(1)}}
     \end{equation}
 
 
@@ -357,12 +373,21 @@ avec
                     calcul de $\frac{\partial E^p}{\partial w_{ij}^{(2)}}$
                 pour chaque $(i,j) \in \{1, ..., n_{in}\} \times \{1, ..., n_{hidden}\}$
                     calcul de $\frac{\partial E^p}{\partial w_{ij}^{(1)}}$
+                pour chaque $j \in \{1, ..., n_{out}\}$
+                    calcul de $\frac{\partial E^p}{\partial b_{j}^{(2)}}$
+                pour chaque $j \in \{1, ..., n_{hidden}\}$
+                    calcul de $\frac{\partial E^p}{\partial b_{j}^{(1)}}$
             pour chaque $(i,j) \in \{1, ..., n_{hidden}\} \times \{1, ..., n_{out}\}$
                 calcul de $\frac{\partial E}{\partial w_{ij}^{(2)}}$ (moyenne de $\frac{\partial E^p}{\partial w_{ij}^{(2)}}$)
             pour chaque $(i,j) \in \{1, ..., n_{in}\} \times \{1, ..., n_{hidden}\}$
                 calcul de $\frac{\partial E}{\partial w_{ij}^{(1)}}$ (moyenne de $\frac{\partial E^p}{\partial w_{ij}^{(1)}}$)
+            pour chaque $j \in \{1, ..., n_{out}\}$
+                calcul de $\frac{\partial E}{\partial b_{j}^{(2)}}$
+            pour chaque $j \in \{1, ..., n_{hidden}\}$
+                calcul de $\frac{\partial E}{\partial b_{j}^{(1)}}$
             Mise a jour des poids: $W = W - \eta \frac{\partial E}{\partial W}$ (descente de gradients)
-        jusqu'a ce que tous les exemples d'entrainement soient tries 
+            Mise a jour des biais: $b = b - \eta \frac{\partial E}{\partial b}$ (descente de gradients)
+            jusqu'a ce que tous les exemples d'entrainement soient tries 
         correctement (ou tout autre critere d'arret)
     \end{lstlisting}
 
