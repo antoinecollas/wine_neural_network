@@ -2,7 +2,6 @@ Neural network on wine dataset from scikit learn.
 Tensorflow implementation (95% of precision)
 
 TODO:
-- descente de gradient
 - dérivées partielles pour les biais
 
 Commands:
