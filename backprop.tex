@@ -262,11 +262,11 @@ avec
         \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)}  \sum\limits_{k=1}^{n_{out}} \sum\limits_{p=1}^{m} \Bigg[ y_k^{(p)} \sum\limits_{q=1}^{n_{out}} \bigg[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i \Bigg]
     \end{equation}
 
-    Autre écriture:
+    % Autre écriture:
 
-    \begin{equation}
-        \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)} \sum\limits_{p=1}^{m} \Bigg[ H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i   \sum\limits_{k=1}^{n_{out}} \bigg[ y_k^{(p)} \sum\limits_{q=1}^{n_{out}} \Big[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \Big] \bigg] \Bigg]
-    \end{equation}
+    % \begin{equation}
+    %     \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)} \sum\limits_{p=1}^{m} \Bigg[ H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i   \sum\limits_{k=1}^{n_{out}} \bigg[ y_k^{(p)} \sum\limits_{q=1}^{n_{out}} \Big[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \Big] \bigg] \Bigg]
+    % \end{equation}
 
     Interprétation:
     d'après la formule précédente, le changement de $w_{ij}^{(1)}$ est déterminé de la façon suivante:
@@ -281,10 +281,11 @@ avec
     % \end{equation}
 
     \section{Rétropropagation}
-
+    \subsection{Calcul des gradients à l'aide de la rétropropagation}
     Nous avons montré dans la section précédente comment calculer les dérivées partielles de la fonction de coût. Cependant les calculs deviennent rapidement assez complexes et peu efficaces en terme de performances.
-    Nous voyons qu'il va être très compliqué d'ajouter des couches cachées supplémentaires à notre réseau.
-    Nous allons maintenant détailler l'algorithme de rétropropagation du gradient qui permet de calculer les gradients successivements en appliquant astucieusement la règle de la chaîne.
+    Il va être très compliqué d'ajouter des couches cachées supplémentaires à notre réseau.
+    Nous allons détailler l'algorithme de rétropropagation du gradient qui permet de calculer les gradients successivements en appliquant astucieusement la règle de la chaîne.
+    L'algorithme de rétropropagation consiste à calculer $\frac{\partial E}{\partial w_{ij}^{(1)}}$ en réutilisant une partie des calculs faits pour $\frac{\partial E}{\partial w_{ij}^{(2)}}$.
 
     Soit $E^p$ l'erreur pour la $p^{eme}$ donnée:
     \begin{equation}
@@ -317,7 +318,12 @@ avec
         \label{backprop}
     \end{equation}
 
-    L'apprentissage du réseau de neurones s'effectue de la manière suivante:
+    Si $\frac{\partial E}{\partial w_{ij}^{(2)}}$ a déjà été calculé alors $\frac{\partial E}{\partial w_{ij}^{(1)}}$ est calculable. En effet, les $\frac{\partial E^p}{\partial (x^{(p,3)})_k}$ sont calculés pour $\frac{\partial E}{\partial w_{ij}^{(2)}}$.
+    Les gradients d'une couche $l$ sont sonc calculés en fonction de ce qui a déjà été calculé pour la couche $l+1$.
+
+    \subsection{Algorithme d'apprentissage d'un réseau de neurones}
+
+    L'apprentissage du réseau de neurones consiste à calculer les gradients de la fonction erreur par rapport aux poids du réseau à l'aide des équations suivantes (rétroprpagation) puis à faire une descente de gradients.
     \begin{equation}
         \frac{\partial E^p}{\partial (x^{(p,3)})_{j}} = -\sum\limits_{k=1}^{n_{out}} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = - \frac{1}{ln(10)} \sum\limits_{k=1}^{n_{out}} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg]
     \end{equation}
@@ -331,18 +337,33 @@ avec
     \end{equation}
 
     \begin{equation}
-        \frac{\partial E}{\partial w_{ij}^{(1)}} = \frac{1}{m}\sum\limits_{p=1}^{m}\sum\limits_{k=1}^{K} \Big(\frac{\partial E^p}{\partial (x^{(p,3)})_k} w_{jk}^{(2)}\Big) H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big] (x^{(p,1)})_i
+        \frac{\partial E^p}{\partial w_{ij}^{(1)}} = \sum\limits_{k=1}^{K} \Big(\frac{\partial E^p}{\partial (x^{(p,3)})_k} w_{jk}^{(2)}\Big) H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big] (x^{(p,1)})_i
     \end{equation}
+
+    \begin{equation}
+        \frac{\partial E}{\partial w_{ij}^{(1)}} = \frac{1}{m}\sum\limits_{p=1}^{m}\frac{\partial E^p}{\partial w_{ij}^{(1)}}
+    \end{equation}
+
+
 
     \begin{lstlisting}[mathescape]
         initialisation aleatoire de tous les poids
         faire
             pour chaque exemple d'entrainement
-                calcul de la prediction (calcul de $x^{(p,2)}$, $x^{(p,3)}$, et $softmax(x^{(p,3)})$)
-                calcul de l'erreur
-            moyenne
-            update network weights // input layer not modified by error estimate
-        until all examples classified correctly or another stopping criterion satisfied
+                prediction: calcul de $x^{(p,2)}$, $x^{(p,3)}$, et $softmax(x^{(p,3)})$
+                pour chaque $j \in \{1, ..., n_{out}\}$
+                    calcul de $\frac{\partial E^p}{\partial (x^{(p,3)})_{j}}$
+                pour chaque $(i,j) \in \{1, ..., n_{hidden}\} \times \{1, ..., n_{out}\}$
+                    calcul de $\frac{\partial E^p}{\partial w_{ij}^{(2)}}$
+                pour chaque $(i,j) \in \{1, ..., n_{in}\} \times \{1, ..., n_{hidden}\}$
+                    calcul de $\frac{\partial E^p}{\partial w_{ij}^{(1)}}$
+            pour chaque $(i,j) \in \{1, ..., n_{hidden}\} \times \{1, ..., n_{out}\}$
+                calcul de $\frac{\partial E}{\partial w_{ij}^{(2)}}$ (moyenne de $\frac{\partial E^p}{\partial w_{ij}^{(2)}}$)
+            pour chaque $(i,j) \in \{1, ..., n_{in}\} \times \{1, ..., n_{hidden}\}$
+                calcul de $\frac{\partial E}{\partial w_{ij}^{(1)}}$ (moyenne de $\frac{\partial E^p}{\partial w_{ij}^{(1)}}$)
+            Mise a jour des poids: $W = W - \eta \frac{\partial E}{\partial W}$ (descente de gradients)
+        jusqu'a ce que tous les exemples d'entrainement soient tries 
+        correctement (ou tout autre critere d'arret)
     \end{lstlisting}
 
     \end{document}
