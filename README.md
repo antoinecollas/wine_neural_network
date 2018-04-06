@@ -1,8 +1,5 @@
 Neural network on wine dataset from scikit learn.
-Tensorflow implementation (95% of precision)
-
-TODO:
-- dérivées partielles pour les biais
+Tensorflow + home-made implementation (95% of precision)
 
 Commands:
 - to run wine.ipynb: jupyter notebook
