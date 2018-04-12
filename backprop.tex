@@ -89,6 +89,42 @@
         \label{fig_perceptron}
     \end{figure}
 
+    Le réseau est composé d'une couche d'entrée avec 13 neurones (les bouteilles de vins ont 13 caratéristiques et donc sont représentées par des vecteurs de 13 dimensions).
+    Une couche cachée avec un nombre de neurones à régler (un hyperparamètre de notre réseau de neurones). 
+    La fonction d'activation est une fonction RELU: $RELU(x) = max(0,x)$. 
+    
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5\textwidth]{imgs/RELU.jpg}
+        \caption{Fonction RELU.}
+        \label{fig_relu}
+    \end{figure}
+    
+    Ce choix est motivé par les raisons suivantes:
+    \begin{itemize}
+        \item rapide à calculer
+        \item biomimétisme: la fréquence d'impulsions d'un neurone biologique est une fonction de l'intensité reçue en entrée. 
+        En dessous d'un certains seuil le neurone biologique ne renvoie aucune impulsion.
+        Au dessus de ce seuil la fréquence d'impulsions croit linéairement par rapport à l'intensité reçue. Cette linéarité est visible dans le carré rouge de la figure \ref{fig_firing_rate}.
+        De plus, le réseau est épars. En, effet si la combinaison linéaire de ce que reçoit un neurone est négative alors le neurone ne renvoie rien.
+        La figure \ref{fig_sparsity} illustre ce phénomène. Dans le cerveau humain seuls 1 à 4\% des neurones sont actifs en même temps.
+        
+    \end{itemize}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5\textwidth]{imgs/firing_rate.png}
+        \caption{Fréquence d'impulsions en fonction de l'intensité d'un neurone biologique (figure tirée de \cite{pmlr-v15-glorot11a}).}
+        \label{fig_firing_rate}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5\textwidth]{imgs/sparsity.png}
+        \caption{Réseau utilisant la foncion d'activation RELU (figure tirée de \cite{pmlr-v15-glorot11a}).}
+        \label{fig_sparsity}
+    \end{figure}
+
     \section{Entrainement d'un réseau de neurones de classification}
     \subsection{Notation}
     $m$ est le nombre d'éléments dans notre ensemble d'entrainement.
@@ -98,9 +134,7 @@
     $n_{in}$ est le nombre de neurones de la couche d'entrée (sans le biais). Donc $n_{in}$ correspond à la dimension de nos données d'entrée.
     
     $n_{hidden}$ est le nombre de neurones de la couche cachée (sans le biais).
-    
-    $n_{out}$ est le nombre de neurones de la couche de sortie. Donc $n_{out}$ correspond au nombre de classes de notre problème.
-    
+        
     $b_i^{(l)}$ est le biais de la couche $l$ allant vers le ième neurone de la couche $l+1$.
 
     $w_{ij}^{(l)}$ est le poids entre le neurone $i$ de la couche $l$ et le neurone $j$ de la couche $l+1$.
@@ -117,7 +151,7 @@
     \subsection{Calcul des dérivées partielles de la fonction de coût}
 
     L'apprentissage d'un réseau de neurones est executé à l'aide d'une descente de gradient sur la fonction de coût. Les paramètres de notre réseau sont les poids $w_{ij}^{(l)}$ et les biais $b_j^{(l)}$.
-    Nous cherchons donc à calculer les dérivées partielles de la fonction de coût par rapport à ces différents paramètres. Nous commençons par montrer comment calculer $\frac{\partial E}{\partial w_{ij}^{(2)}}$ $\forall (i,j) \in \{1, ..., n_{hidden}\} \times \{1, ..., n_{out}\}.$
+    Nous cherchons donc à calculer les dérivées partielles de la fonction de coût par rapport à ces différents paramètres. Nous commençons par montrer comment calculer $\frac{\partial E}{\partial w_{ij}^{(2)}}$ $\forall (i,j) \in \{1, ..., n_{hidden}\} \times \{1, ..., K\}.$
 
     Pour un lot de données entré dans le réseau nous avons les équations suivantes en partant de l'erreur:
     
@@ -131,7 +165,7 @@ avec
     où $x^{(p,3)}$ est la sortie de la dernière couche avant le softmax pour la pème donnée d'entrainement.
 
     \begin{equation}
-        \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{n_{out}} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}}
+        \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{K} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}}
     \end{equation}
 
     Règle de la chaine:
@@ -140,7 +174,7 @@ avec
     Donc en appliquant la règle de la chaine:
     
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}} = \sum\limits_{q=1}^{n_{out}} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{q}} \frac{\partial (x^{(p,3)})_{q}}{\partial w_{ij}^{(2)}}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}} = \sum\limits_{q=1}^{K} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{q}} \frac{\partial (x^{(p,3)})_{q}}{\partial w_{ij}^{(2)}}
     \end{equation}
     
     or si $q \ne j$
@@ -154,12 +188,12 @@ avec
     \end{equation}
 
     \begin{equation}
-        log(\hat{p}_{k}^{(p)}) = \frac{ln(\hat{p}_{k}^{(p)})}{ln(10)} = \frac{(x^{(p,3)})_k - ln(\sum\limits_{q=1}^{n_{out}} e^{(x^{(p,3)})_q})} {ln(10)}
+        log(\hat{p}_{k}^{(p)}) = \frac{ln(\hat{p}_{k}^{(p)})}{ln(10)} = \frac{(x^{(p,3)})_k - ln(\sum\limits_{q=1}^{K} e^{(x^{(p,3)})_q})} {ln(10)}
     \end{equation}
 
     Si $k \ne j$
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = -\frac{1}{ln(10)} \frac{e^{(x^{(p,3)})_j}}{\sum\limits_{q=1}^{n_{out}} e^{(x^{(p,3)})_q}} = -\frac{softmax(x^{(p,3)})_j}{ln(10)}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = -\frac{1}{ln(10)} \frac{e^{(x^{(p,3)})_j}}{\sum\limits_{q=1}^{K} e^{(x^{(p,3)})_q}} = -\frac{softmax(x^{(p,3)})_j}{ln(10)}
     \end{equation}
 
     Sinon (dans le cas où $k = j$):
@@ -191,7 +225,7 @@ avec
 
     Ce qui donne finalement:
     \begin{equation}
-        \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m \times ln(10)} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{n_{out}} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] (x^{(p,2)})_{i}
+        \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m \times ln(10)} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{K} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] (x^{(p,2)})_{i}
     \end{equation}
 
     Cette formule peut être interprétée de la manière suivante:
@@ -204,7 +238,7 @@ avec
     Nous appliquons le même procédé pour calculer $\frac{\partial E}{\partial w_{ij}^{(1)}}$
 
     \begin{equation}
-        \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{n_{out}} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}}
+        \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{K} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}}
         \label{E_wij1}
     \end{equation}
 
@@ -214,7 +248,7 @@ avec
     \end{equation}
 
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \sum\limits_{q=1}^{n_{out}} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_q} \frac{\partial (x^{(p,3)})_q}{\partial (x^{(p,2)})_j}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \sum\limits_{q=1}^{K} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_q} \frac{\partial (x^{(p,3)})_q}{\partial (x^{(p,2)})_j}
         \label{log_x2}
     \end{equation}
     
@@ -225,7 +259,7 @@ avec
     
     D'après les équations \eqref{log_x3}, \eqref{log_x2}, \eqref{x3_x2}:
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \frac{1}{ln(10)} \sum\limits_{q=1}^{n_{out}} \bigg[ \delta_{kq} - softmax(x^{(p,3)})_q \bigg] w_{jk}^{(2)}
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \frac{1}{ln(10)} \sum\limits_{q=1}^{K} \bigg[ \delta_{kq} - softmax(x^{(p,3)})_q \bigg] w_{jk}^{(2)}
         \label{log_x2_final}
     \end{equation}
     
@@ -253,19 +287,19 @@ avec
     %16,19,23
     D'après les équations \eqref{log_wij}, \eqref{log_x2_final}, \eqref{x2_wij}:
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}} = \frac{1}{ln(10)} H\bigg[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\bigg](x^{(p,1)})_i \sum\limits_{q=1}^{n_{out}} \bigg[\big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] 
+        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}} = \frac{1}{ln(10)} H\bigg[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\bigg](x^{(p,1)})_i \sum\limits_{q=1}^{K} \bigg[\big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] 
         \label{log_wij_final}
     \end{equation}
 
     D'après les équations \eqref{E_wij1} et \eqref{log_wij_final}:
     \begin{equation}
-        \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)}  \sum\limits_{k=1}^{n_{out}} \sum\limits_{p=1}^{m} \Bigg[ y_k^{(p)} \sum\limits_{q=1}^{n_{out}} \bigg[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i \Bigg]
+        \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)}  \sum\limits_{k=1}^{K} \sum\limits_{p=1}^{m} \Bigg[ y_k^{(p)} \sum\limits_{q=1}^{K} \bigg[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i \Bigg]
     \end{equation}
 
     % Autre écriture:
 
     % \begin{equation}
-    %     \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)} \sum\limits_{p=1}^{m} \Bigg[ H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i   \sum\limits_{k=1}^{n_{out}} \bigg[ y_k^{(p)} \sum\limits_{q=1}^{n_{out}} \Big[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \Big] \bigg] \Bigg]
+    %     \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)} \sum\limits_{p=1}^{m} \Bigg[ H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i   \sum\limits_{k=1}^{K} \bigg[ y_k^{(p)} \sum\limits_{q=1}^{K} \Big[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \Big] \bigg] \Bigg]
     % \end{equation}
 
     Interprétation:
@@ -274,10 +308,10 @@ avec
         \item nous réunissons tous les éléments d'entrainement par classe (interprétation de la double somme et de $y_k^{(p)}$)
         \item pour chaque élément de la classe nous calculons la responsabilité de $w_{ij}^{(1)}$ dans l'erreur finale: si pour l'élément choisi, la somme pondérée est négative alors le poids n'est pas modifié (pas de responsabilité dans l'erreur, représenté par H dans l'équation)
         \item sinon la modification est proportionnelle à $(x^{(p,1)})_i$ (la variable d'entrée pour le $p^{eme}$ élément d'entrainement) 
-        \item la modification est aussi proportionnelle aux erreurs de toutes les sorties (les couches sont totalement connectées ce qui est visible dans $\sum\limits_{q=1}^{n_{out}} \bigg[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg]$)
+        \item la modification est aussi proportionnelle aux erreurs de toutes les sorties (les couches sont totalement connectées ce qui est visible dans $\sum\limits_{q=1}^{K} \bigg[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg]$)
     \end{itemize}
     % \begin{equation}
-    %     x^{(3)} = (x^{(3)}_1, ..., x^{(3)}_{n_{out}}) = (\sum\limits_{k=1}^{n_{hidden}} w_{k1}^{(2)}x_{k}^{(2)} + b_1^{(2)}, ..., \sum\limits_{k=1}^{n_{hidden}} w_{kn_{out}}^{(2)}x_{k}^{(2)} + b_{n_{out}}^{(2)})
+    %     x^{(3)} = (x^{(3)}_1, ..., x^{(3)}_{K}) = (\sum\limits_{k=1}^{n_{hidden}} w_{k1}^{(2)}x_{k}^{(2)} + b_1^{(2)}, ..., \sum\limits_{k=1}^{n_{hidden}} w_{kK}^{(2)}x_{k}^{(2)} + b_{K}^{(2)})
     % \end{equation}
 
     \section{Rétropropagation}
@@ -325,7 +359,7 @@ avec
 
     L'apprentissage du réseau de neurones consiste à calculer les gradients de la fonction erreur par rapport aux poids du réseau à l'aide des équations suivantes (rétroprpagation) puis à faire une descente de gradients.
     \begin{equation}
-        \frac{\partial E^p}{\partial (x^{(p,3)})_{j}} = -\sum\limits_{k=1}^{n_{out}} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = - \frac{1}{ln(10)} \sum\limits_{k=1}^{n_{out}} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg]
+        \frac{\partial E^p}{\partial (x^{(p,3)})_{j}} = -\sum\limits_{k=1}^{K} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = - \frac{1}{ln(10)} \sum\limits_{k=1}^{K} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg]
     \end{equation}
 
     \begin{equation}
@@ -367,21 +401,21 @@ avec
         faire
             pour chaque exemple d'entrainement
                 prediction: calcul de $x^{(p,2)}$, $x^{(p,3)}$, et $softmax(x^{(p,3)})$
-                pour chaque $j \in \{1, ..., n_{out}\}$
+                pour chaque $j \in \{1, ..., K\}$
                     calcul de $\frac{\partial E^p}{\partial (x^{(p,3)})_{j}}$
-                pour chaque $(i,j) \in \{1, ..., n_{hidden}\} \times \{1, ..., n_{out}\}$
+                pour chaque $(i,j) \in \{1, ..., n_{hidden}\} \times \{1, ..., K\}$
                     calcul de $\frac{\partial E^p}{\partial w_{ij}^{(2)}}$
                 pour chaque $(i,j) \in \{1, ..., n_{in}\} \times \{1, ..., n_{hidden}\}$
                     calcul de $\frac{\partial E^p}{\partial w_{ij}^{(1)}}$
-                pour chaque $j \in \{1, ..., n_{out}\}$
+                pour chaque $j \in \{1, ..., K\}$
                     calcul de $\frac{\partial E^p}{\partial b_{j}^{(2)}}$
                 pour chaque $j \in \{1, ..., n_{hidden}\}$
                     calcul de $\frac{\partial E^p}{\partial b_{j}^{(1)}}$
-            pour chaque $(i,j) \in \{1, ..., n_{hidden}\} \times \{1, ..., n_{out}\}$
+            pour chaque $(i,j) \in \{1, ..., n_{hidden}\} \times \{1, ..., K\}$
                 calcul de $\frac{\partial E}{\partial w_{ij}^{(2)}}$ (moyenne de $\frac{\partial E^p}{\partial w_{ij}^{(2)}}$)
             pour chaque $(i,j) \in \{1, ..., n_{in}\} \times \{1, ..., n_{hidden}\}$
                 calcul de $\frac{\partial E}{\partial w_{ij}^{(1)}}$ (moyenne de $\frac{\partial E^p}{\partial w_{ij}^{(1)}}$)
-            pour chaque $j \in \{1, ..., n_{out}\}$
+            pour chaque $j \in \{1, ..., K\}$
                 calcul de $\frac{\partial E}{\partial b_{j}^{(2)}}$
             pour chaque $j \in \{1, ..., n_{hidden}\}$
                 calcul de $\frac{\partial E}{\partial b_{j}^{(1)}}$
@@ -390,5 +424,8 @@ avec
         jusqu'a ce que tous les exemples d'entrainement soient tries 
         correctement (ou tout autre critere d'arret)
     \end{lstlisting}
+
+    \bibliographystyle{plain}
+    \bibliography{bibtex.bib}
 
     \end{document}
