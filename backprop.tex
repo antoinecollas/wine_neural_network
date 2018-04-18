@@ -77,15 +77,16 @@
     
     \pagebreak
         
-    \section{Réseau de neurones: perceptron multicouche}
+    \section{Réseau de neurones: perceptron}
     
-    L'objectif est de programmer un perceptron multicouche afin de classer un ensemble de bouteilles de vins en 3 ensembles.
+    L'objectif est de programmer un perceptron afin de classer un ensemble de bouteilles de vins en 3 ensembles (dataset disponible \href{http://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_wine.html}{ici}). 
+    Dans la suite de ce document nous souhaitons entrainer un perceptron à une couche sur cet ensemble de données.
 
-    L'architecture de notre perceptron multicouche est la suivante:
+    L'architecture de notre perceptron est la suivante:
     \begin{figure}
         \centering
         \includegraphics[width=0.5\textwidth]{imgs/perceptron.png}
-        \caption{Perceptron multi-couches tiré de 'Hands-On Machine Learning with Scikit-Learn and TensorFlow' de Aurélien Géron.}
+        \caption{Perceptron multi-couches tiré de \cite{geron}.}
         \label{fig_perceptron}
     \end{figure}
 
@@ -100,15 +101,27 @@
         \label{fig_relu}
     \end{figure}
     
-    Ce choix est motivé par les raisons suivantes:
+    Ce choix est motivé par les raisons suivantes (tirées de \cite{pmlr-v15-glorot11a}):
     \begin{itemize}
-        \item rapide à calculer
-        \item biomimétisme: la fréquence d'impulsions d'un neurone biologique est une fonction de l'intensité reçue en entrée. 
+        \item Rapide à calculer.
+        \item Biomimétisme. Tout d'abord La fréquence d'impulsions d'un neurone biologique en fonction de l'intensité reçue peut être assimilée à une fonction RELU.
+        En effet, la fréquence d'impulsions d'un neurone biologique est une fonction de l'intensité reçue en entrée. 
         En dessous d'un certains seuil le neurone biologique ne renvoie aucune impulsion.
-        Au dessus de ce seuil la fréquence d'impulsions croit linéairement par rapport à l'intensité reçue. Cette linéarité est visible dans le carré rouge de la figure \ref{fig_firing_rate}.
+        Au dessus de ce seuil la fréquence d'impulsions croit linéairement par rapport à l'intensité reçue (jusqu'à $1\times 10^{-9} A$). Cette linéarité est visible dans le carré rouge de la figure \ref{fig_firing_rate}.
         De plus, le réseau est épars. En, effet si la combinaison linéaire de ce que reçoit un neurone est négative alors le neurone ne renvoie rien.
         La figure \ref{fig_sparsity} illustre ce phénomène. Dans le cerveau humain seuls 1 à 4\% des neurones sont actifs en même temps.
-        
+        \cite{pmlr-v15-glorot11a} indique que $83\%$ des neurones d'un réseau entrainé sur le MNIST renvoient $0$. 
+        \item La variation du nombre de neurones actifs permet à un modèle de contrôler la dimensionnalité du réseau.
+        \item \cite{pmlr-v15-glorot11a} indique avoir obtenu de meilleurs performances sur $4$ jeux de données différents en utilisant un RELU à la place d'une tangente hyperbolique
+        \item Une dernière raison concerne le problème de disparition de gradients.
+        Ce problème ne concerne que les réseaux très profonds, c'est à dire ayant un nombre important de couches cachées.
+        Il ne concerne donc pas notre réseau mais il est intéressant de l'expliquer.
+        Le problème des premiers réseaux de neurones est qu'ils utilisaient la fonction d'activation sigmoïde. Or, $\frac{\partial sigmoïde(x)}{\partial x}\in ]0,\frac{1}{4}]$.
+        Donc en appliquant la règle de la chaine nous allons multiplier successivement des nombre appartenant à $]0,\frac{1}{4}]$.
+        Donc les dérivées partielles vont décroitre exponentiellement au fur et à mesure de la rétropropagation.
+        L'entrainement des premières couches va être très lent voir totalement bloqué.
+        La fonction RELU n'a pas ce problème puisque les dérivées partielles de RELU calculées en passant par les chemins bleus de la figure \ref{fig_sparsity} sont égales à 1.
+        Cela permet de ni augmenter ni diminuer exponentiellement la rétropropagation de l'erreur.
     \end{itemize}
 
     \begin{figure}
@@ -125,21 +138,46 @@
         \label{fig_sparsity}
     \end{figure}
 
+    La fonction d'erreur est l'entropie croisée qui donne une mesure d'erreur pour un problème de classification.
+    $E = -\frac{1}{m} \sum\limits_{i=1}^m\sum\limits_{k=1}^K (y_{k}^{(i)} \times log(\hat{p}_{k}^{(i)}))$
+
+    $y_{k}^{(i)}$ vaut 1 si le ième élément de l'échantillon appartient à la classe $k$, 0 sinon. $\hat{p}_{k}^{(i)}$ est la kème sortie du perceptron pour le ième élément de l'échantillon.
+    
+    Si le réseau a trouvé une probabilité de 1 pour la classe correspondant à l'individu alors l'erreur est nulle.
+    Sinon l'erreur croit exponentiellement quand la probabilité tend vers 0. L'entropie croisée pénalise donc très fortement les grosses erreurs et faiblement les petites erreurs.
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5\textwidth]{imgs/moins_ln.png}
+        \caption{f(x)=-ln(x)}
+        \label{fig_moins_ln}
+    \end{figure}
+
     \section{Entrainement d'un réseau de neurones de classification}
+    Dans cette partie l'objectif est d'entrainer notre réseau de neurones.
+    L'entrainement d'un réseau de neurones consiste à régler les paramètres (poids des connexions) afin de minimiser la fonction d'erreur (l'entropie croisée dans notre cas).
+    Cette minimisation est réalisée par une descente de gradient: le gradient de la fonction d'erreur est calculé puis les poids sont mis à jour et on recommence jusqu'à atteindre un minimum.
+    La mise à jour est réalisée de la manière suivante:
+    \begin{equation}
+        \nonumber
+        W := W - \eta \frac{\partial E}{\partial W}
+    \end{equation}
+    Nous avons donc besoin de calculer les dérivées partielles de l'erreur par rapport à chacun des poids.
     \subsection{Notation}
     $m$ est le nombre d'éléments dans notre ensemble d'entrainement.
 
     $K$ est le nombre de classes (et donc de sorties de notre réseau de neurones).
 
-    $n_{in}$ est le nombre de neurones de la couche d'entrée (sans le biais). Donc $n_{in}$ correspond à la dimension de nos données d'entrée.
-    
+    $n_{in}$ est le nombre de neurones de la couche d'entrée (sans le biais). 
+    Donc $n_{in}$ correspond à la dimension de nos données d'entrée.
+
     $n_{hidden}$ est le nombre de neurones de la couche cachée (sans le biais).
         
     $b_i^{(l)}$ est le biais de la couche $l$ allant vers le ième neurone de la couche $l+1$.
 
     $w_{ij}^{(l)}$ est le poids entre le neurone $i$ de la couche $l$ et le neurone $j$ de la couche $l+1$.
     
-    $x_{i}^{(l)}$ est la sortie du neurone $i$ de la couche $l$. Donc $x_{i}^{(2)} = relu(\sum\limits_{k=1}^{n_{in}} w_{ki}^{(1)}x_{k}^{(1)} + b_i^{(1)})$
+    $(x^{(p,l)})_{i}$ est la sortie du neurone $i$ de la couche $l$ pour le $p^{eme}$ individu d'entrainement. 
+    Donc $(x^{(p,2)})_{i} = relu(\sum\limits_{k=1}^{n_{in}} w_{ki}^{(1)}(x^{(p,1)})_{k} + b_i^{(1)})$
     
     $relu(x) = max(0,x)$ est la fonction d'activation de la couche cachée.
 
@@ -156,15 +194,18 @@
     Pour un lot de données entré dans le réseau nous avons les équations suivantes en partant de l'erreur:
     
     \begin{equation}
+        \nonumber
         E = -\frac{1}{m} \sum\limits_{p=1}^m\sum\limits_{k=1}^K (y_{k}^{(p)} \times log(\hat{p}_{k}^{(p)}))
     \end{equation}
 avec 
     \begin{equation}
+        \nonumber
         \hat{p}_{k}^{(p)} = softmax(x^{(p,3)})_k
     \end{equation}
     où $x^{(p,3)}$ est la sortie de la dernière couche avant le softmax pour la pème donnée d'entrainement.
 
     \begin{equation}
+        \nonumber
         \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{K} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}}
     \end{equation}
 
@@ -174,30 +215,24 @@ avec
     Donc en appliquant la règle de la chaine:
     
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}} = \sum\limits_{q=1}^{K} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{q}} \frac{\partial (x^{(p,3)})_{q}}{\partial w_{ij}^{(2)}}
-    \end{equation}
-    
-    or si $q \ne j$
-    \begin{equation}
-       \frac{\partial (x^{(p,3)})_{q}}{\partial w_{ij}^{(2)}} = 0
-    \end{equation}
-    
-    donc
-    \begin{equation}
+        \nonumber
         \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}} = \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} \frac{\partial (x^{(p,3)})_{j}}{\partial w_{ij}^{(2)}}
     \end{equation}
 
     \begin{equation}
+        \nonumber
         log(\hat{p}_{k}^{(p)}) = \frac{ln(\hat{p}_{k}^{(p)})}{ln(10)} = \frac{(x^{(p,3)})_k - ln(\sum\limits_{q=1}^{K} e^{(x^{(p,3)})_q})} {ln(10)}
     \end{equation}
 
     Si $k \ne j$
     \begin{equation}
+        \nonumber
         \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = -\frac{1}{ln(10)} \frac{e^{(x^{(p,3)})_j}}{\sum\limits_{q=1}^{K} e^{(x^{(p,3)})_q}} = -\frac{softmax(x^{(p,3)})_j}{ln(10)}
     \end{equation}
 
     Sinon (dans le cas où $k = j$):
     \begin{equation}
+        \nonumber
         \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = \frac{1}{ln(10)} \bigg[ 1 - softmax(x^{(p,3)})_j \bigg]
     \end{equation}
 
@@ -211,20 +246,24 @@ avec
     
     De plus,
     \begin{equation}
+        \nonumber
         (x^{(p,3)})_{j} = \sum\limits_{i=1}^{n_{hidden}} w_{ij}^{(2)}(x^{(p,2)})_i + b_j^{(2)}
     \end{equation}
 
     Donc,
     \begin{equation}
+        \nonumber
         \frac{\partial (x^{(p,3)})_{q}}{\partial w^{(2)}_{ij}} = (x^{(p,2)})_i
     \end{equation}
 
     \begin{equation}
+        \nonumber
         \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w^{(2)}_{ij}} = \frac{1}{ln(10)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] (x^{(p,2)})_{i}
     \end{equation}
 
     Ce qui donne finalement:
     \begin{equation}
+        \nonumber
         \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m \times ln(10)} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{K} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] (x^{(p,2)})_{i}
     \end{equation}
 
@@ -264,16 +303,19 @@ avec
     \end{equation}
     
     \begin{equation}
+        \nonumber
         (x^{(p,2)})_{j} = relu\bigg[\sum\limits_{k=1}^{n_{in}} w_{kj}^{(1)}(x^{(p,1)})_{k} + b_j^{(1)}\bigg]
     \end{equation}
     
     Si $\sum\limits_{k=1}^{n_{in}} w_{kj}^{(1)}(x^{(p,1)})_{k} + b_j^{(1)} > 0$:
     \begin{equation}
+        \nonumber
         \frac{\partial (x^{(p,2)})_j}{\partial w_{ij}^{(1)}} = \frac{\partial relu\bigg[\sum\limits_{k=1}^{n_{in}} w_{kj}^{(1)}(x^{(p,1)})_{k} + b_j^{(1)}\bigg]}{\partial w_{ij}^{(1)}} = \frac{\partial \bigg[\sum\limits_{k=1}^{n_{in}} w_{kj}^{(1)}(x^{(p,1)})_{k} + b_j^{(1)}\bigg]}{\partial w_{ij}^{(1)}} = (x^{(p,1)})_i
     \end{equation}
     
     Si $\sum\limits_{k=1}^{n_{in}} w_{kj}^{(1)}(x^{(p,1)})_{k} + b_j^{(1)} < 0$:
     \begin{equation}
+        \nonumber
         \frac{\partial (x^{(p,2)})_j}{\partial w_{ij}^{(1)}} = \frac{\partial relu\bigg[\sum\limits_{k=1}^{n_{in}} w_{kj}^{(1)}(x^{(p,1)})_{k} + b_j^{(1)}\bigg]}{\partial w_{ij}^{(1)}} = 0
     \end{equation}
     
@@ -293,6 +335,7 @@ avec
 
     D'après les équations \eqref{E_wij1} et \eqref{log_wij_final}:
     \begin{equation}
+        \nonumber
         \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)}  \sum\limits_{k=1}^{K} \sum\limits_{p=1}^{m} \Bigg[ y_k^{(p)} \sum\limits_{q=1}^{K} \bigg[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i \Bigg]
     \end{equation}
 
@@ -323,12 +366,14 @@ avec
 
     Soit $E^p$ l'erreur pour la $p^{eme}$ donnée:
     \begin{equation}
+        \nonumber
         E^p = - \sum\limits_{k=1}^K (y_{k}^{(p)} \times log(\hat{p}_{k}^{(p)}))
     \end{equation}
 
     En appliquant la règle de la chaine:
     \begin{equation}
         \begin{aligned}
+            \nonumber
             \frac{\partial E^p}{\partial w_{ij}^{(1)}} & = \frac{\partial E^p}{\partial (x^{(p,2)})_j} \frac{\partial (x^{(p,2)})_j}{\partial (\sum\limits_{k=1}^{n_{in}} w_{kj}^{(1)}(x^{(p,1)})_{k} + b_j^{(1)})} \frac{\partial (\sum\limits_{k=1}^{n_{in}} w_{kj}^{(1)}(x^{(p,1)})_{k} + b_j^{(1)})}{\partial w_{ij}^{(1)}} \\
             & = \frac{\partial E^p}{\partial (x^{(p,2)})_j} H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big] (x^{(p,1)})_i
         \end{aligned}
@@ -336,12 +381,14 @@ avec
 
     Il reste à calculer $\frac{\partial E^p}{\partial (x^{(p,2)})_j}$:
     \begin{equation}
+        \nonumber
         \frac{\partial E^p}{\partial (x^{(p,2)})_j}  = \sum\limits_{k=1}^{K} \Big(\frac{\partial E^p}{\partial (x^{(p,3)})_k} \frac{\partial (x^{(p,3)})_k}{\partial (x^{(p,2)})_j}\Big) = \sum\limits_{k=1}^{K} \Big(\frac{\partial E^p}{\partial (x^{(p,3)})_k} w_{jk}^{(2)}\Big)
     \end{equation}
 
     D'après les deux équations précédentes:
 
     \begin{equation}
+        \nonumber
         \frac{\partial E^p}{\partial w_{ij}^{(1)}} = \sum\limits_{k=1}^{K} \Big(\frac{\partial E^p}{\partial (x^{(p,3)})_k} w_{jk}^{(2)}\Big) H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big] (x^{(p,1)})_i
     \end{equation}
 
@@ -359,38 +406,47 @@ avec
 
     L'apprentissage du réseau de neurones consiste à calculer les gradients de la fonction erreur par rapport aux poids du réseau à l'aide des équations suivantes (rétroprpagation) puis à faire une descente de gradients.
     \begin{equation}
+        \nonumber
         \frac{\partial E^p}{\partial (x^{(p,3)})_{j}} = -\sum\limits_{k=1}^{K} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = - \frac{1}{ln(10)} \sum\limits_{k=1}^{K} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg]
     \end{equation}
 
     \begin{equation}
+        \nonumber
         \frac{\partial E^p}{\partial w_{ij}^{(2)}} = \frac{\partial E^p}{\partial (x^{(p,3)})_{j}} \frac{\partial (x^{(p,3)})_{j}}{\partial w_{ij}^{(2)}} = \frac{\partial E^p}{\partial (x^{(p,3)})_{j}} (x^{(p,2)})_i
     \end{equation}
 
     \begin{equation}
+        \nonumber
         \frac{\partial E}{\partial w_{ij}^{(2)}} = \frac{1}{m} \sum\limits_{p=1}^{m} \frac{\partial E^p}{\partial w_{ij}^{(2)}}
     \end{equation}
 
     \begin{equation}
+        \nonumber
         \frac{\partial E^p}{\partial b_j^{(2)}} = \frac{\partial E^p}{\partial (x^{(p,3)})_{j}} \frac{\partial (x^{(p,3)})_{j}}{\partial b_{j}^{(2)}} = \frac{\partial E^p}{\partial (x^{(p,3)})_{j}}
     \end{equation}
 
     \begin{equation}
+        \nonumber
         \frac{\partial E}{\partial b_{j}^{(2)}} = \frac{1}{m} \sum\limits_{p=1}^{m} \frac{\partial E^p}{\partial b_{j}^{(2)}}
     \end{equation}
 
     \begin{equation}
+        \nonumber
         \frac{\partial E^p}{\partial w_{ij}^{(1)}} = \sum\limits_{k=1}^{K} \Big(\frac{\partial E^p}{\partial (x^{(p,3)})_k} w_{jk}^{(2)}\Big) H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big] (x^{(p,1)})_i
     \end{equation}
 
     \begin{equation}
+        \nonumber
         \frac{\partial E}{\partial w_{ij}^{(1)}} = \frac{1}{m}\sum\limits_{p=1}^{m}\frac{\partial E^p}{\partial w_{ij}^{(1)}}
     \end{equation}
 
     \begin{equation}
+        \nonumber
         \frac{\partial E^p}{\partial b_j^{(1)}} = \sum\limits_{k=1}^{K} \Big(\frac{\partial E^p}{\partial (x^{(p,3)})_k} w_{jk}^{(2)}\Big) H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big]
     \end{equation}
 
     \begin{equation}
+        \nonumber
         \frac{\partial E}{\partial b_j^{(1)}} = \frac{1}{m}\sum\limits_{p=1}^{m}\frac{\partial E^p}{\partial b_j^{(1)}}
     \end{equation}
 
@@ -425,6 +481,20 @@ avec
         correctement (ou tout autre critere d'arret)
     \end{lstlisting}
 
+    \section{Implémentation}
+    Nous avons implémentaté ce perceptron à une couche et l'avons entrainé sur le jeu de données indiqué en première partie.
+    Les 3 classes ayant à peu près le même effectif nous avons calculé le nombre d'erreurs divisé par l'effectif total sur un ensemble de test représentant 30\% des données (le reste servant à l'entrainement).
+    
+    \begin{tabular}{|l|l|l|}
+        \hline
+        Nombre de neurones dans la couche cachée & Pourcentage d'erreur \\\hline  \hline
+        5 & 39\% \\ \hline
+        10 & 6\% \\ \hline
+        30 & 6\% \\ \hline
+        50 & 2\% \\ \hline
+        100 & 0\% \\ \hline
+        1000 & 0\% \\ \hline
+    \end{tabular}
     \bibliographystyle{plain}
     \bibliography{bibtex.bib}
 
