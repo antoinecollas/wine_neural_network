@@ -80,7 +80,7 @@
     \section{Réseau de neurones: perceptron}
     
     L'objectif est de programmer un perceptron afin de classer un ensemble de bouteilles de vins en 3 ensembles (dataset disponible \href{http://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_wine.html}{ici}). 
-    Dans la suite de ce document nous souhaitons entrainer un perceptron à une couche sur cet ensemble de données.
+    Dans la suite de ce document nous souhaitons entrainer un perceptron ayant une couche cachée sur cet ensemble de données.
 
     L'architecture de notre perceptron est la suivante:
     \begin{figure}
@@ -90,8 +90,7 @@
         \label{fig_perceptron}
     \end{figure}
 
-    Le réseau est composé d'une couche d'entrée avec 13 neurones (les bouteilles de vins ont 13 caratéristiques et donc sont représentées par des vecteurs de 13 dimensions).
-    Une couche cachée avec un nombre de neurones à régler (un hyperparamètre de notre réseau de neurones). 
+    Le réseau est composé d'une couche d'entrée avec 13 neurones (les bouteilles de vins ont 13 caratéristiques et donc sont représentées par des vecteurs de 13 dimensions), une couche cachée avec un nombre de neurones à régler (un hyperparamètre de notre réseau de neurones) et de 3 sorties (une sortie par classe à prédire).
     La fonction d'activation est une fonction RELU: $RELU(x) = max(0,x)$. 
     
     \begin{figure}
@@ -101,7 +100,7 @@
         \label{fig_relu}
     \end{figure}
     
-    Ce choix est motivé par les raisons suivantes (tirées de \cite{pmlr-v15-glorot11a}):
+    Le choix de cette fonction d'activation est motivé par les raisons suivantes (tirées de \cite{pmlr-v15-glorot11a}):
     \begin{itemize}
         \item Rapide à calculer.
         \item Biomimétisme. Tout d'abord La fréquence d'impulsions d'un neurone biologique en fonction de l'intensité reçue peut être assimilée à une fonction RELU.
@@ -134,12 +133,14 @@
     \begin{figure}
         \centering
         \includegraphics[width=0.5\textwidth]{imgs/sparsity.png}
-        \caption{Réseau utilisant la foncion d'activation RELU (figure tirée de \cite{pmlr-v15-glorot11a}).}
+        \caption{Réseau (perceptron avec deux couches cachées) utilisant la fonction d'activation RELU (figure tirée de \cite{pmlr-v15-glorot11a}). 
+        Les cases blanches représentent les neurones dont le RELU renvoie 0. 
+        Les cases bleues représentent les neurones dont le RELU renvoie une valeur non nulle (strictement positive).}
         \label{fig_sparsity}
     \end{figure}
 
     La fonction d'erreur est l'entropie croisée qui donne une mesure d'erreur pour un problème de classification.
-    $E = -\frac{1}{m} \sum\limits_{i=1}^m\sum\limits_{k=1}^K (y_{k}^{(i)} \times log(\hat{p}_{k}^{(i)}))$
+    $E = -\frac{1}{m} \sum\limits_{i=1}^m\sum\limits_{k=1}^K (y_{k}^{(i)} \times ln(\hat{p}_{k}^{(i)}))$
 
     $y_{k}^{(i)}$ vaut 1 si le ième élément de l'échantillon appartient à la classe $k$, 0 sinon. $\hat{p}_{k}^{(i)}$ est la kème sortie du perceptron pour le ième élément de l'échantillon.
     
@@ -163,15 +164,18 @@
     \end{equation}
     Nous avons donc besoin de calculer les dérivées partielles de l'erreur par rapport à chacun des poids.
     \subsection{Notation}
+
+    Nous détaillons l'ensemble des notations pour notre perceptron ayant une couche cachée.
+
     $m$ est le nombre d'éléments dans notre ensemble d'entrainement.
 
-    $K$ est le nombre de classes (et donc de sorties de notre réseau de neurones).
+    $K$ est le nombre de classes (et donc de sorties de notre réseau de neurones). K=3 dans notre cas.
 
     $n_{in}$ est le nombre de neurones de la couche d'entrée (sans le biais). 
-    Donc $n_{in}$ correspond à la dimension de nos données d'entrée.
+    Donc $n_{in}$ correspond à la dimension de nos données d'entrée. $n_{in} = 13$ dans notre cas.
 
-    $n_{hidden}$ est le nombre de neurones de la couche cachée (sans le biais).
-        
+    $n_{hidden}$ est le nombre de neurones de la couche cachée (sans le biais). $n_{hidden}$ est un hyperparamètre (donc réglable avant l'entrainement).
+
     $b_i^{(l)}$ est le biais de la couche $l$ allant vers le ième neurone de la couche $l+1$.
 
     $w_{ij}^{(l)}$ est le poids entre le neurone $i$ de la couche $l$ et le neurone $j$ de la couche $l+1$.
@@ -181,10 +185,7 @@
     
     $relu(x) = max(0,x)$ est la fonction d'activation de la couche cachée.
 
-    $softmax(x)_j = \frac{e^{x_j}}{\sum\limits_{k=1}^n e^{x_k}}$ est la fonction de sortie permettant d'obtenir la probabilité pour chaque classe.
-
-    $E = -\frac{1}{m} \sum\limits_{i=1}^m\sum\limits_{k=1}^K (y_{k}^{(i)} \times log(\hat{p}_{k}^{(i)}))$ est l'erreur appelée entropie croisée.
-    $y_{k}^{(i)}$ vaut 1 si le ième élément de l'échantillon appartient à la classe $k$, 0 sinon. $\hat{p}_{k}^{(i)}$ est la kème sortie du perceptron pour le ième élément de l'échantillon.
+    $softmax(x)_j = \frac{e^{x_j}}{\sum\limits_{k=1}^K e^{x_k}}$ est la fonction de sortie permettant d'obtenir la probabilité pour chaque classe.
 
     \subsection{Calcul des dérivées partielles de la fonction de coût}
 
@@ -195,7 +196,7 @@
     
     \begin{equation}
         \nonumber
-        E = -\frac{1}{m} \sum\limits_{p=1}^m\sum\limits_{k=1}^K (y_{k}^{(p)} \times log(\hat{p}_{k}^{(p)}))
+        E = -\frac{1}{m} \sum\limits_{p=1}^m\sum\limits_{k=1}^K (y_{k}^{(p)} \times ln(\hat{p}_{k}^{(p)}))
     \end{equation}
 avec 
     \begin{equation}
@@ -206,7 +207,8 @@ avec
 
     \begin{equation}
         \nonumber
-        \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{K} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}}
+        \forall (i,j) \in \{1, ..., n_{hidden}\} \times \{1, ..., K\} \quad
+        \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{K} y_k^{(p)} \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}}
     \end{equation}
 
     Règle de la chaine:
@@ -216,29 +218,29 @@ avec
     
     \begin{equation}
         \nonumber
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}} = \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} \frac{\partial (x^{(p,3)})_{j}}{\partial w_{ij}^{(2)}}
+        \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(2)}} = \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} \frac{\partial (x^{(p,3)})_{j}}{\partial w_{ij}^{(2)}}
     \end{equation}
 
     \begin{equation}
         \nonumber
-        log(\hat{p}_{k}^{(p)}) = \frac{ln(\hat{p}_{k}^{(p)})}{ln(10)} = \frac{(x^{(p,3)})_k - ln(\sum\limits_{q=1}^{K} e^{(x^{(p,3)})_q})} {ln(10)}
+        ln(\hat{p}_{k}^{(p)})  = (x^{(p,3)})_k - ln(\sum\limits_{q=1}^{K} e^{(x^{(p,3)})_q})
     \end{equation}
 
     Si $k \ne j$
     \begin{equation}
         \nonumber
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = -\frac{1}{ln(10)} \frac{e^{(x^{(p,3)})_j}}{\sum\limits_{q=1}^{K} e^{(x^{(p,3)})_q}} = -\frac{softmax(x^{(p,3)})_j}{ln(10)}
+        \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = -\frac{e^{(x^{(p,3)})_j}}{\sum\limits_{q=1}^{K} e^{(x^{(p,3)})_q}} = -softmax(x^{(p,3)})_j
     \end{equation}
 
     Sinon (dans le cas où $k = j$):
     \begin{equation}
         \nonumber
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = \frac{1}{ln(10)} \bigg[ 1 - softmax(x^{(p,3)})_j \bigg]
+        \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = 1 - softmax(x^{(p,3)})_j
     \end{equation}
 
     Donc $\forall k$:
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = \frac{1}{ln(10)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg]
+        \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = \delta_{kj} - softmax(x^{(p,3)})_j
         \label{log_x3}
     \end{equation}
     
@@ -258,36 +260,36 @@ avec
 
     \begin{equation}
         \nonumber
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w^{(2)}_{ij}} = \frac{1}{ln(10)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] (x^{(p,2)})_{i}
+        \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial w^{(2)}_{ij}} = \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] (x^{(p,2)})_{i}
     \end{equation}
 
     Ce qui donne finalement:
     \begin{equation}
         \nonumber
-        \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m \times ln(10)} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{K} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] (x^{(p,2)})_{i}
+        \frac{\partial E}{\partial w_{ij}^{(2)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{K} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg] (x^{(p,2)})_{i}
     \end{equation}
 
     Cette formule peut être interprétée de la manière suivante:
     \begin{itemize}
-        \item Si la classe à prédire pour la $p^{eme}$ donnée entrée dans le réseau est $j$ alors le poids $w_{ij}^{(2)}$ est augmenté en fonction de la performance de la prédiction et de $(x^{(p,2)})_{i}$.
-        Si la prédiction est déjà très bonne, $w_{ij}^{(2)}$ n'est est que légèrement augmenté sinon il est formetement augmenté pour augmenter la probabilité sortante du réseau.
-        \item Si la classe à prédire est $k \ne j$ alors il y une diminution du poids en fonction de la probabilité sortante et de $(x^{(p,2)})_{i}$. Si la probabilité sortante est faible, le poids n'est que légèrement diminué. Si elle est élevée (alors qu'elle devrait être faible), le poids est fortement diminué.
+        \item Si la classe à prédire pour la $p^{eme}$ donnée entrée dans le réseau est $j$ alors le poids $w_{ij}^{(2)}$ est modifié en fonction de la performance de la prédiction et de $(x^{(p,2)})_{i}$.
+        Si la prédiction est déjà très bonne, $w_{ij}^{(2)}$ n'est est que légèrement modifié sinon il est fortement modifié pour augmenter la probabilité sortante du réseau.
+        \item Si la classe à prédire est $k \ne j$ alors il y une diminution du poids en fonction de la probabilité sortante et de $(x^{(p,2)})_{i}$. Si la probabilité sortante est faible, le poids n'est que légèrement modifié. Si elle est élevée (alors qu'elle devrait être faible), le poids est fortement modifié.
     \end{itemize}
 
     Nous appliquons le même procédé pour calculer $\frac{\partial E}{\partial w_{ij}^{(1)}}$
 
     \begin{equation}
-        \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{K} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}}
+        \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \sum\limits_{k=1}^{K} y_k^{(p)} \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}}
         \label{E_wij1}
     \end{equation}
 
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}} = \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} \frac{\partial (x^{(p,2)})_j}{\partial w_{ij}^{(1)}}
+        \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}} = \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} \frac{\partial (x^{(p,2)})_j}{\partial w_{ij}^{(1)}}
         \label{log_wij}
     \end{equation}
 
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \sum\limits_{q=1}^{K} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_q} \frac{\partial (x^{(p,3)})_q}{\partial (x^{(p,2)})_j}
+        \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \sum\limits_{q=1}^{K} \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_q} \frac{\partial (x^{(p,3)})_q}{\partial (x^{(p,2)})_j}
         \label{log_x2}
     \end{equation}
     
@@ -298,7 +300,7 @@ avec
     
     D'après les équations \eqref{log_x3}, \eqref{log_x2}, \eqref{x3_x2}:
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \frac{1}{ln(10)} \sum\limits_{q=1}^{K} \bigg[ \delta_{kq} - softmax(x^{(p,3)})_q \bigg] w_{jk}^{(2)}
+        \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial (x^{(p,2)})_j} = \sum\limits_{q=1}^{K} \bigg[ \delta_{kq} - softmax(x^{(p,3)})_q \bigg] w_{jk}^{(2)}
         \label{log_x2_final}
     \end{equation}
     
@@ -329,20 +331,20 @@ avec
     %16,19,23
     D'après les équations \eqref{log_wij}, \eqref{log_x2_final}, \eqref{x2_wij}:
     \begin{equation}
-        \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}} = \frac{1}{ln(10)} H\bigg[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\bigg](x^{(p,1)})_i \sum\limits_{q=1}^{K} \bigg[\big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] 
+        \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial w_{ij}^{(1)}} = H\bigg[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\bigg](x^{(p,1)})_i \sum\limits_{q=1}^{K} \bigg[\big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] 
         \label{log_wij_final}
     \end{equation}
 
     D'après les équations \eqref{E_wij1} et \eqref{log_wij_final}:
     \begin{equation}
         \nonumber
-        \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)}  \sum\limits_{k=1}^{K} \sum\limits_{p=1}^{m} \Bigg[ y_k^{(p)} \sum\limits_{q=1}^{K} \bigg[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i \Bigg]
+        \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m}  \sum\limits_{k=1}^{K} \sum\limits_{p=1}^{m} \Bigg[ y_k^{(p)} \sum\limits_{q=1}^{K} \bigg[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \bigg] H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i \Bigg]
     \end{equation}
 
     % Autre écriture:
 
     % \begin{equation}
-    %     \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m \times ln(10)} \sum\limits_{p=1}^{m} \Bigg[ H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i   \sum\limits_{k=1}^{K} \bigg[ y_k^{(p)} \sum\limits_{q=1}^{K} \Big[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \Big] \bigg] \Bigg]
+    %     \frac{\partial E}{\partial w_{ij}^{(1)}} = -\frac{1}{m} \sum\limits_{p=1}^{m} \Bigg[ H\big[\sum\limits_{q=1}^{n_{in}} w_{qj}^{(1)}(x^{(p,1)})_{q} + b_j^{(1)}\big](x^{(p,1)})_i   \sum\limits_{k=1}^{K} \bigg[ y_k^{(p)} \sum\limits_{q=1}^{K} \Big[ \big[ \delta_{kq} - softmax(x^{(p,3)})_q \big] w_{jq}^{(2)} \Big] \bigg] \Bigg]
     % \end{equation}
 
     Interprétation:
@@ -367,7 +369,7 @@ avec
     Soit $E^p$ l'erreur pour la $p^{eme}$ donnée:
     \begin{equation}
         \nonumber
-        E^p = - \sum\limits_{k=1}^K (y_{k}^{(p)} \times log(\hat{p}_{k}^{(p)}))
+        E^p = - \sum\limits_{k=1}^K (y_{k}^{(p)} \times ln(\hat{p}_{k}^{(p)}))
     \end{equation}
 
     En appliquant la règle de la chaine:
@@ -404,10 +406,12 @@ avec
 
     \subsection{Algorithme d'apprentissage d'un réseau de neurones}
 
-    L'apprentissage du réseau de neurones consiste à calculer les gradients de la fonction erreur par rapport aux poids du réseau à l'aide des équations suivantes (rétroprpagation) puis à faire une descente de gradients.
+    L'apprentissage du réseau de neurones consiste à calculer les gradients de la fonction erreur par rapport aux poids du réseau à l'aide des équations suivantes (rétropropagation) puis à faire une descente de gradients.
+    Les poids sont initialisés avec une loi normale d'espérance 0 et de variance 1.
+
     \begin{equation}
         \nonumber
-        \frac{\partial E^p}{\partial (x^{(p,3)})_{j}} = -\sum\limits_{k=1}^{K} y_k^{(p)} \frac{\partial log(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = - \frac{1}{ln(10)} \sum\limits_{k=1}^{K} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg]
+        \frac{\partial E^p}{\partial (x^{(p,3)})_{j}} = -\sum\limits_{k=1}^{K} y_k^{(p)} \frac{\partial ln(\hat{p}_{k}^{(p)})}{\partial (x^{(p,3)})_{j}} = - \sum\limits_{k=1}^{K} y_k^{(p)} \bigg[ \delta_{kj} - softmax(x^{(p,3)})_j \bigg]
     \end{equation}
 
     \begin{equation}
